@@ -1,0 +1,84 @@
+###########################################################################################
+################################# variables ###############################################
+string encode_string;
+string probestring;
+
+###########################################################################################
+################################# constants ###############################################
+
+##################################################################################################
+
+array<string>consonants[20]={"B","C","D","F","G","H","J","K","L","M","N","P","Q","R","S","T","V","W","X","Z"};
+
+array<int>countarray[20]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+array<int>probe_yes_countarray4[4]={1,2,3,4};
+array<int>probe_yes_countarray6[6]={1,2,3,4,5,6};
+array<int>probe_no_countarray[14]={7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+
+array<int>trial_array[40][3]={ # sets WM load (4 or 6 letters), delay (4 sec), ITI duration (2,4,6, or 12 sec)
+
+{4,4000,2000},{4,4000,2000},{4,4000,2000},{4,4000,2000},{4,4000,2000},{4,4000,2000},{4,4000,2000},{4,4000,2000}, # 8+4 trials with 4 sec delay & 2 sec ITI
+{4,4000,2000},{4,4000,2000},{4,4000,2000},{4,4000,2000},
+{4,4000,4000},{4,4000,4000},{4,4000,4000},{4,4000,4000},												 				 # 4 trials with 4 sec delay & 4 sec ITI
+{4,4000,6000},{4,4000,6000},
+{4,4000,12000},{4,4000,12000},
+
+{6,4000,2000},{6,4000,2000},{6,4000,2000},{6,4000,2000},{6,4000,2000},{6,4000,2000},{6,4000,2000},{6,4000,2000}, 
+{6,4000,2000},{6,4000,2000},{6,4000,2000},{6,4000,2000},
+{6,4000,4000},{6,4000,4000},{6,4000,4000},{6,4000,4000},												 	
+{6,4000,6000},{6,4000,6000},
+{6,4000,12000},{6,4000,12000}
+};
+
+trial_array.shuffle(); # randomly shuffles the 40 rows (40 trials)
+
+instructions_trial.present();
+#start_trial.present(); # waits for the code from the scanner
+
+
+loop int trl=1 until trl> 40 begin 
+	
+	# set the duration of the delay period and of the ITI
+	int delayjitter=random(0,1000);
+	int itijitter=random(0,1000);
+	int delaydurn=trial_array[trl][2]+delayjitter;
+	int itidurn=trial_array[trl][3]+itijitter;
+	delay_event.set_duration(delaydurn);
+	delay_event.set_event_code("delay"+string(delaydurn));
+	probe_event.set_deltat(delaydurn);
+	iti_event.set_duration(itidurn);
+	iti_event.set_event_code("iti"+string(itidurn));
+	
+	# set the letter string for encode and the letter for the probe
+	int probe_yesvsno=random(0,1); # 1 if probe was in encode string, 0 if it wasn't
+	countarray.shuffle();
+	if(trial_array[trl][1]==4)then
+		encode_string="#"+consonants[countarray[1]]+consonants[countarray[2]]+consonants[countarray[3]]+consonants[countarray[4]]+"#";
+	elseif(trial_array[trl][1]==6)then
+		encode_string=consonants[countarray[1]]+consonants[countarray[2]]+consonants[countarray[3]]+consonants[countarray[4]]+consonants[countarray[5]]+consonants[countarray[6]];
+	end;
+	encode_txt.set_caption(encode_string);
+	encode_txt.redraw();
+	encode_event.set_event_code(encode_string);
+	
+	probe_yes_countarray4.shuffle();
+	probe_yes_countarray6.shuffle();
+	probe_no_countarray.shuffle();
+	if(probe_yesvsno==1)then	
+		if(trial_array[trl][1]==6)then # wmload=6
+			probestring=consonants[countarray[probe_yes_countarray6[1]]]; # pick a num between 1 and 6 (e.g. 5) then take the 5th number in count array, then get the corresponding letter from the consonants array
+		elseif(trial_array[trl][1]==4)then
+			probestring=consonants[countarray[probe_yes_countarray4[1]]]; # pick a num between 1 and 4 (e.g. 2) then take the 2nd number in count array, then get the corresponding letter from the consonants array
+		end		
+	elseif(probe_yesvsno==0)then		
+		probestring=consonants[countarray[probe_no_countarray[1]]];  # pick a num between 7 and 20 (e.g. 15) then take the 15th number in count array, then get the corresponding letter from the consonants array	
+	end;
+	probe_txt.set_caption(probestring);
+	probe_txt.redraw();
+	probe_event.set_event_code(probestring);
+		
+	wm_trial.present();
+#	display_device.screenshot( "D:\\PhD\\MCT\\MCT_fMRI_study\\2 Working Memory\\WMscreenshot.bmp" );
+	trl=trl+1;
+end;
+end_trial.present();
